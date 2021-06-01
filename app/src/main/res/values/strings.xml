@@ -1,3 +1,11 @@
 <resources>
+    <string name="beacon_uuid">2F9C6368-EBF8-4158-9E59-C371C9DF97A6</string>
     <string name="app_name">PositionDemo_Client</string>
+    <string name="no_permissions_hint">檢測到沒有權限，請先申請並同意所有權限！</string>
+    <string name="request_permissions">申請權限</string>
+    <string name="user_denied_permissions_hint">用戶手動拒絕或系統版本爲Android 11，請手動打開設置並設置權限。</string>
+    <string name="user_denied_alert_exit_app">再也不用了，退出</string>
+    <string name="user_denied_go_to_settings">去設置</string>
+    <string name="user_denied_cancel">取消</string>
+
 </resources>
