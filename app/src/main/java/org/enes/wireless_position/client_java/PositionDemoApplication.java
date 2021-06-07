@@ -2,9 +2,16 @@ package org.enes.wireless_position.client_java;
 
 import android.Manifest;
 import android.app.Application;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.os.Parcelable;
 import android.os.RemoteException;
+import android.provider.Settings;
 import android.util.Log;
+
+import com.google.gson.Gson;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
@@ -15,9 +22,15 @@ import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
 import org.altbeacon.beacon.startup.BootstrapNotifier;
 import org.altbeacon.beacon.startup.RegionBootstrap;
+import org.enes.wireless_position.client_java.network.UDPDataSender;
+import org.enes.wireless_position.client_java.pojo.BeaconListPOJO;
+import org.enes.wireless_position.client_java.pojo.BeaconPOJO;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 public class PositionDemoApplication extends Application implements BeaconConsumer, RangeNotifier {
 
@@ -102,7 +115,10 @@ public class PositionDemoApplication extends Application implements BeaconConsum
     @Override
     public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
         if(beacons != null && beacons.size() > 0) {
+//            List<Beacon> beaconList = new ArrayList<>();
+            List<BeaconPOJO> beaconPOJOS = new ArrayList<>();
             Iterator<Beacon> iterator = beacons.iterator();
+            Log.e("tag", "-----------LOG--START-----------");
             while (iterator.hasNext()) {
                 Beacon beacon = iterator.next();
                 String uuid = beacon.getId1().toString();
@@ -110,10 +126,43 @@ public class PositionDemoApplication extends Application implements BeaconConsum
                     String id2 = beacon.getId2().toString();
                     String id3 = beacon.getId3().toString();
                     int rssi = beacon.getRssi();
-                    Log.e("tag", "id2:" + id2 +", id3:" + id3 + ", rssi:" + rssi);
+                    String id1 = beacon.getId1().toString();
+                    Log.e("tag", "uuid:" +  id1 + "id2:" + id2 +", id3:" + id3 + ", rssi:" + rssi);
+//                    beaconList.add(beacon);
+                    BeaconPOJO beaconPOJO = new BeaconPOJO();
+                    beaconPOJO.uuid = id1;
+                    beaconPOJO.id2 = id2;
+                    beaconPOJO.id3 = id3;
+                    beaconPOJO.rssi = rssi;
+                    beaconPOJOS.add(beaconPOJO);
                 }
             }
-            Log.e("tag", "-----------------------");
+            Log.e("tag", "-----------LOG---END------------");
+            Bundle bundle = new Bundle();
+            bundle.putSerializable(GET_BEACON_LIST_KEY, (Serializable) beaconPOJOS);
+            Intent intent = new Intent(INTENT_FILTER_BEACON_FOUND);
+            intent.putExtras(bundle);
+            sendBroadcast(intent);
+            //
+            sendListToServer(beaconPOJOS);
         }
     }
+
+    public static final String GET_BEACON_LIST_KEY = "BEACON_LIST";
+
+    public static final String INTENT_FILTER_BEACON_FOUND = "BEACON_FOUND";
+
+    private void sendListToServer(List<BeaconPOJO> list) {
+        if(list != null && list.size() > 0) {
+            BeaconListPOJO beaconListPOJO = new BeaconListPOJO();
+            beaconListPOJO.bs_id = Settings.Global.getString(getContentResolver(), "device_name");
+            beaconListPOJO.data = list;
+
+            Gson gson = new Gson();
+            String str = gson.toJson(beaconListPOJO);
+            UDPDataSender.sendDataToServer(str);
+        }
+    }
+
+
 }

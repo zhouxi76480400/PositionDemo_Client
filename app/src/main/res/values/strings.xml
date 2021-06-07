@@ -7,5 +7,10 @@
     <string name="user_denied_alert_exit_app">再也不用了，退出</string>
     <string name="user_denied_go_to_settings">去設置</string>
     <string name="user_denied_cancel">取消</string>
+    <string name="do_not_lock_screen">請不要鎖屏</string>
+    <string name="str_uuid">UUID:</string>
+    <string name="str_id2">ID2:</string>
+    <string name="str_id3">ID3:</string>
+    <string name="str_rssi">RSSI:</string>
 
 </resources>

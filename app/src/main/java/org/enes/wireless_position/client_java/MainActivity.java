@@ -4,10 +4,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -15,8 +20,13 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
+
+import org.altbeacon.beacon.Beacon;
+import org.enes.wireless_position.client_java.adapter.BeaconAdapter;
+import org.enes.wireless_position.client_java.pojo.BeaconPOJO;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -27,6 +37,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private LinearLayout ll_main, ll_no_permission;
     private Button btn_request_permissions;
+    private RecyclerView rv_main;
+
+    private BeaconAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +53,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ll_no_permission = findViewById(R.id.ll_no_permission);
         btn_request_permissions = findViewById(R.id.btn_request_permissions);
         btn_request_permissions.setOnClickListener(this);
+        rv_main = findViewById(R.id.rv_main);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        rv_main.setLayoutManager(linearLayoutManager);
+        adapter = new BeaconAdapter(this, pojoList);
+        rv_main.setAdapter(adapter);
     }
 
 
@@ -47,6 +65,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onResume() {
         super.onResume();
         checkPermissionAndShowUI();
+        registerBR();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterBR();
     }
 
     public static final int REQUEST_PERMISSION_CODE = 0x00061;
@@ -93,8 +118,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if(ll_no_permission.getVisibility()!= View.GONE)
             ll_no_permission.setVisibility(View.GONE);
         //
-
-
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        setTitle(getString(R.string.do_not_lock_screen));
 
 
     }
@@ -178,4 +203,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
+
+    private List<BeaconPOJO> pojoList = new ArrayList<>();
+
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equalsIgnoreCase(PositionDemoApplication.INTENT_FILTER_BEACON_FOUND)) {
+                ArrayList<BeaconPOJO> arrayList =
+                        (ArrayList<BeaconPOJO>) intent.getExtras().getSerializable(PositionDemoApplication.GET_BEACON_LIST_KEY);
+                if(arrayList != null&& arrayList.size() > 0) {
+                    pojoList.clear();
+                    pojoList.addAll(arrayList);
+                    //
+                    refreshRecyclerView();
+                }
+            }
+        }
+    };
+
+    private void registerBR() {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(PositionDemoApplication.INTENT_FILTER_BEACON_FOUND);
+        registerReceiver(broadcastReceiver, intentFilter);
+    }
+
+    private void unregisterBR() {
+        unregisterReceiver(broadcastReceiver);
+    }
+
+    private void refreshRecyclerView() {
+        if(adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
+    }
+
 }

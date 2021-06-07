@@ -8,8 +8,14 @@
     <LinearLayout
         android:id="@+id/ll_main"
         android:orientation="vertical"
+        android:padding="@dimen/default_margin"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_main"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
 
     </LinearLayout>
 
